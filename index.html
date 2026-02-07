@@ -1,0 +1,1441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>MSI B2C Strategy Lab – AI Product Simulator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      --bg: #020617;
+      --bg-soft: #0b1220;
+      --card: #ffffff;
+      --accent: #6366f1; /* indigo */
+      --accent-soft: rgba(99, 102, 241, 0.08);
+      --accent-2: #f97316; /* warm orange */
+      --accent-3: #22c55e; /* green */
+      --text-main: #0f172a;
+      --text-muted: #6b7280;
+      --border-subtle: #e5e7eb;
+      --shadow-soft: 0 18px 45px rgba(15, 23, 42, 0.35);
+      --radius-lg: 18px;
+      --radius-pill: 999px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        sans-serif;
+      background: radial-gradient(circle at top left, #1d2849, #020617 55%);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .page-shell {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px 16px 90px;
+      flex: 1 0 auto;
+    }
+
+    .lab-header {
+      background: radial-gradient(circle at top left, #1d4ed8, #020617 55%);
+      border-radius: 24px;
+      padding: 22px 22px 20px;
+      margin-bottom: 18px;
+      color: #e5e7eb;
+      box-shadow: var(--shadow-soft);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .lab-header::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(
+        circle at top right,
+        rgba(248, 250, 252, 0.08),
+        transparent 55%
+      );
+      pointer-events: none;
+    }
+
+    .lab-header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .lab-title-block h1 {
+      font-size: 1.6rem;
+      letter-spacing: 0.02em;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .lab-title-block p {
+      font-size: 0.9rem;
+      color: #cbd5f5;
+      max-width: 520px;
+    }
+
+    /* Tabs */
+    .tab-bar {
+      margin-top: 16px;
+      display: flex;
+      gap: 10px;
+      position: relative;
+      z-index: 1;
+      flex-wrap: wrap;
+    }
+
+    .tab-button {
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.65);
+      padding: 7px 14px;
+      background: rgba(15, 23, 42, 0.65);
+      color: #e5e7eb;
+      font-size: 0.82rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.18s ease;
+    }
+
+    .tab-button span.icon {
+      font-size: 0.9rem;
+    }
+
+    .tab-button.active {
+      background: linear-gradient(135deg, #f97316, #22c55e);
+      border-color: transparent;
+      color: #0f172a;
+    }
+
+    .tab-button:hover:not(.active) {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.3);
+    }
+
+    /* Tab content wrapper */
+    .tab-content-wrapper {
+      margin-top: 22px;
+    }
+
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel.active {
+      display: block;
+      animation: fadeIn 0.35s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Layout grid */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 18px;
+    }
+
+    @media (max-width: 900px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+      .lab-header-top {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: var(--radius-lg);
+      padding: 18px 18px 16px;
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.26);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 14px;
+      gap: 10px;
+    }
+
+    .card-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-title span.emoji {
+      font-size: 1.1rem;
+    }
+
+    .card-subtitle {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    hr.card-divider {
+      border: none;
+      border-top: 1px dashed #e5e7eb;
+      margin: 8px 0 14px;
+    }
+
+    /* Form elements */
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-group label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #111827;
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .hint {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      margin-bottom: 3px;
+    }
+
+    select,
+    input[type="text"],
+    textarea {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid #e5e7eb;
+      padding: 9px 10px;
+      font-size: 0.85rem;
+      outline: none;
+      transition: all 0.18s ease;
+      background-color: #f9fafb;
+    }
+
+    select:focus,
+    input[type="text"]:focus,
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.35);
+      background-color: #ffffff;
+    }
+
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .dynamic-section {
+      background: #f9fafb;
+      border-radius: 14px;
+      padding: 12px 12px 6px;
+      border: 1px dashed #e5e7eb;
+      margin-top: 4px;
+    }
+
+    .placeholder-text {
+      text-align: center;
+      padding: 20px 8px;
+      font-size: 0.82rem;
+      font-style: italic;
+      color: var(--text-muted);
+    }
+
+    /* Pills */
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: var(--radius-pill);
+      padding: 4px 10px;
+      font-size: 0.78rem;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border: 1px solid rgba(129, 140, 248, 0.5);
+      margin-top: 3px;
+    }
+
+    .summary-row {
+      margin-bottom: 8px;
+      font-size: 0.84rem;
+    }
+
+    .summary-label {
+      font-weight: 600;
+      color: #111827;
+      margin-right: 4px;
+    }
+
+    .summary-empty {
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* Run button */
+    .run-button {
+      width: 100%;
+      border-radius: 999px;
+      border: none;
+      padding: 10px 18px;
+      margin-top: 10px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      background-image: linear-gradient(135deg, #f97316, #22c55e);
+      color: #0f172a;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 16px 30px rgba(15, 23, 42, 0.3);
+      transition: all 0.18s ease;
+    }
+
+    .run-button:disabled {
+      background-image: none;
+      background-color: #e5e7eb;
+      color: #9ca3af;
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
+
+    .run-button:not(:disabled):hover {
+      transform: translateY(-1px);
+      box-shadow: 0 20px 38px rgba(15, 23, 42, 0.4);
+    }
+
+    /* Results panel */
+    .results-shell {
+      margin-top: 18px;
+    }
+
+    .results-section {
+      background: var(--card);
+      border-radius: var(--radius-lg);
+      padding: 18px 18px 16px;
+      box-shadow: var(--shadow-soft);
+      border: 1px solid var(--border-subtle);
+      display: none;
+    }
+
+    .results-section.show {
+      display: block;
+      animation: fadeIn 0.35s ease-out;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px 10px 30px;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border-radius: 999px;
+      border: 3px solid #e5e7eb;
+      border-top-color: var(--accent);
+      animation: spin 0.9s linear infinite;
+      margin: 0 auto 14px;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .loading p {
+      font-size: 0.86rem;
+      color: var(--text-muted);
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    @media (max-width: 800px) {
+      .metrics-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    .metric-card {
+      border-radius: 14px;
+      padding: 10px 10px 8px;
+      color: #f9fafb;
+      background: radial-gradient(circle at top left, #4f46e5, #1d2442);
+      position: relative;
+      overflow: hidden;
+      font-size: 0.8rem;
+    }
+
+    .metric-card:nth-child(2) {
+      background: radial-gradient(circle at top left, #ea580c, #1f2937);
+    }
+
+    .metric-card:nth-child(3) {
+      background: radial-gradient(circle at top left, #06b6d4, #0f172a);
+    }
+
+    .metric-card:nth-child(4) {
+      background: radial-gradient(circle at top left, #16a34a, #022c22);
+    }
+
+    .metric-label {
+      opacity: 0.88;
+      margin-bottom: 4px;
+    }
+
+    .metric-value {
+      font-size: 1.4rem;
+      font-weight: 700;
+    }
+
+    .analysis-block {
+      margin-top: 8px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: #f9fafb;
+      border-left: 3px solid var(--accent);
+      font-size: 0.86rem;
+      color: #111827;
+      line-height: 1.6;
+    }
+
+    .analysis-block h4 {
+      font-size: 0.9rem;
+      margin-bottom: 4px;
+      color: #4f46e5;
+    }
+
+    .analysis-block ul {
+      margin-left: 18px;
+      margin-bottom: 4px;
+    }
+
+    .analysis-block li {
+      margin-bottom: 2px;
+    }
+
+
+    .note-box h3 {
+      font-size: 0.98rem;
+      margin-bottom: 6px;
+    }
+
+    .note-box p {
+      font-size: 0.84rem;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .dot-list {
+      margin-left: 18px;
+      font-size: 0.84rem;
+      color: var(--text-muted);
+    }
+
+    .dot-list li {
+      margin-bottom: 3px;
+    }
+
+    /* Solution tab */
+    .solution-shell {
+      background: var(--card);
+      border-radius: var(--radius-lg);
+      padding: 18px 18px 16px;
+      box-shadow: var(--shadow-soft);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .password-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .password-row input {
+      max-width: 200px;
+    }
+
+    .small-btn {
+      border-radius: 999px;
+      border: none;
+      padding: 7px 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: #0f172a;
+      color: #f9fafb;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.16s ease;
+    }
+
+    .small-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 20px rgba(15, 23, 42, 0.35);
+    }
+
+    .solution-locked {
+      font-size: 0.84rem;
+      color: var(--text-muted);
+      font-style: italic;
+      padding: 8px 4px;
+      border-radius: 10px;
+      background: #f9fafb;
+      border: 1px dashed #e5e7eb;
+    }
+
+    .solution-content {
+      display: none;
+      font-size: 0.86rem;
+      color: #111827;
+      line-height: 1.6;
+      margin-top: 6px;
+    }
+
+    /* Footer */
+    .lab-footer {
+      flex-shrink: 0;
+      width: 100%;
+      border-top: 1px solid rgba(148, 163, 184, 0.35);
+      background: rgba(15, 23, 42, 0.96);
+      color: #9ca3af;
+      font-size: 0.72rem;
+      padding: 8px 14px 10px;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      display: flex;
+      justify-content: center;
+    }
+
+    .lab-footer-inner {
+      max-width: 1200px;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .footer-tagline {
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-size: 0.7rem;
+    }
+
+    .footer-meta {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .footer-pill {
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.75);
+      padding: 2px 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* Bottom-sheet AI modal */
+    .ai-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 50;
+    }
+
+    .ai-modal.show {
+      display: flex;
+      animation: fadeInBg 0.18s ease-out;
+    }
+
+    @keyframes fadeInBg {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .ai-modal-sheet {
+      width: 100%;
+      max-width: 520px;
+      background: #020617;
+      border-radius: 18px 18px 0 0;
+      box-shadow: 0 -16px 40px rgba(15, 23, 42, 0.8);
+      padding: 14px 16px 16px;
+      color: #e5e7eb;
+      transform: translateY(100%);
+      animation: slideUpSheet 0.22s ease-out forwards;
+    }
+
+    @keyframes slideUpSheet {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    .ai-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .ai-modal-title {
+      font-size: 0.96rem;
+      font-weight: 600;
+    }
+
+    .ai-modal-subtitle {
+      font-size: 0.78rem;
+      color: #9ca3af;
+      margin-bottom: 10px;
+    }
+
+    .ai-modal-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .ai-platform-btn {
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.65);
+      padding: 8px 10px;
+      background: rgba(15, 23, 42, 0.85);
+      color: #e5e7eb;
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.16s ease;
+    }
+
+    .ai-platform-btn span.icon {
+      font-size: 0.95rem;
+    }
+
+    .ai-platform-btn:hover {
+      background: linear-gradient(135deg, #f97316, #22c55e);
+      color: #0f172a;
+      border-color: transparent;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.6);
+    }
+
+    .ai-modal-footer {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .ai-modal-close {
+      border-radius: 999px;
+      border: none;
+      padding: 6px 12px;
+      font-size: 0.78rem;
+      background: #111827;
+      color: #e5e7eb;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      opacity: 0.9;
+    }
+
+    .ai-modal-close:hover {
+      opacity: 1;
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.6);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page-shell">
+    <!-- HEADER -->
+    <header class="lab-header">
+      <div class="lab-header-top">
+        <div class="lab-title-block">
+          <h1>
+            <span>🧪 MSI B2C Strategy Lab</span>
+          </h1>
+          <p>
+            B2C product's marketing strategy (first draft), using AI prompts.</br>
+            It will prepare an India-focused report for the specific product.
+          </p>
+        </div>
+      </div>
+
+      <!-- TABS -->
+      <nav class="tab-bar">
+        <button class="tab-button active" data-tab-target="tab-lab">
+          <span class="icon">🎯</span> Lab Config
+        </button>
+        <button class="tab-button" data-tab-target="tab-report">
+          <span class="icon">📈</span> AI Strategy Report
+        </button>
+      </nav>
+    </header>
+
+    <!-- TAB CONTENT -->
+    <div class="tab-content-wrapper">
+      <!-- TAB 1: LAB CONFIG -->
+      <section class="tab-panel active" id="tab-lab">
+        <div class="main-grid">
+          <!-- Left: product config -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">
+                  <span class="emoji">🧩</span> Product Configuration
+                </div>
+                <div class="card-subtitle">
+                  Select a product, then set its variant, positioning, pricing, channel, and target audience.
+                </div>
+              </div>
+            </div>
+            <hr class="card-divider" />
+
+            <div class="form-group">
+              <label for="product">Product Category</label>
+              <div class="hint">
+               Select a B2C product and set STP for a draft strategy, aligned to the context.
+              </div>
+              <select id="product">
+                <option value="">— Select a Product —</option>
+                <option value="campa-cola">🥤 Campa Cola (Beverage)</option>
+                <option value="nova-phone">📱 Nova Phone (Smartphone)</option>
+                <option value="glow-skin">✨ Glow Skin (Skincare)</option>
+                <option value="volt-bike">⚡ Volt Bike (E-Bike)</option>
+                <option value="taste-bites">🍕 Taste Bites (Food Delivery)</option>
+                <option value="swift-cab">🚗 Swift Cab (Ride Sharing)</option>
+              </select>
+            </div>
+
+            <div class="dynamic-section" id="dynamic-fields">
+              <div class="placeholder-text">
+                Select a product category to unlock tailored strategy fields.
+              </div>
+            </div>
+
+            <button id="runBtn" class="run-button" disabled>
+              <span>🤖 Generate Prompt for Strategy Report</span>
+            </button>
+          </div>
+
+          <!-- Right: current selection -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">
+                  <span class="emoji">👁️</span> Current Scenario Snapshot
+                </div>
+                <div class="card-subtitle">
+                  Live view of your lab choices – useful for classroom cold calls.
+                </div>
+              </div>
+            </div>
+            <hr class="card-divider" />
+            <div id="selection-summary">
+              <div class="placeholder-text" style="padding: 24px 6px;">
+                First select a product in the <b>Product Configuration panel</b>.</br>
+				Choice will be updated here. </br>So you can “read the board” at a glance.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RESULTS AREA -->
+        <div class="results-shell">
+          <div id="results" class="results-section">
+            <div id="loading" class="loading">
+              <div class="spinner"></div>
+              <p>🧠 AI is analysing your B2C configuration and mapping it to STP + 4Ps…</p>
+            </div>
+
+            <div id="analysis-results" style="display: none;">
+              <div class="card-header" style="padding: 0 0 8px;">
+                <div>
+                  <div class="card-title">
+                    <span class="emoji">📈</span> AI Strategy Dashboard
+                  </div>
+                  <div class="card-subtitle">
+                    Use this with any external AI tool – prompt-ready, classroom-friendly.
+                  </div>
+                </div>
+              </div>
+              <hr class="card-divider" />
+
+              <div class="metrics-grid" id="metrics">
+                <!-- metrics injected here -->
+              </div>
+
+              <div class="analysis-block">
+                <div id="ai-analysis">
+                  <!-- prompt injected here -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: AI REPORT (summary view only) -->
+      <section class="tab-panel" id="tab-report">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">
+                <span class="emoji">📊</span> Full AI Strategy Report (External)
+              </div>
+              <div class="card-subtitle">
+                Run the lab under <strong>Lab Config</strong>, send the prompt to your chosen AI, then discuss the 2-page report.</br></br>
+<p style="font-size:0.85rem; color:#6b7280; margin:0;">
+Benchmark Outline:</br></br>
+Conduct a suitable analysis of the 5Cs for the brand/product context</br>
+STP: Define a clear segment, a tight target, and a sharp positioning statement.</br>
+7Ps: Align the marketing strategy mix for the chosen product and STP </br>
+Risks: Note 2–3 likely competitive responses and your counter-moves.</br></br>
+<b>Learning Point</b>: Review, discussion and improve your marketing strategy. </p>
+              </div>
+            </div>
+          </div>
+          <hr class="card-divider" />
+          <div id="report-placeholder">
+            <div class="placeholder-text" style="padding: 20px 4px;">
+              Configure a scenario using <strong>Lab Config</strong> and click <em>Generate a prompt for strategy report</em>.
+            </div>
+          </div>
+          <div id="report-proxy" style="display:none;">
+            <div class="metrics-grid" id="metrics-report"></div>
+            <div class="analysis-block">
+              <div id="ai-analysis-report">
+                <p style="font-size:0.85rem; color:#6b7280; margin:0;">
+                  Use the prompt to generate a report in your chosen AI platform (ChatGPT / Gemini / Perplexity / Copilot). Use the <strong>Lab Config</strong> tab to generate and view the prompt.
+                </p>
+		</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      
+
+
+  <!-- BOTTOM-SHEET AI MODAL -->
+  <div id="aiModal" class="ai-modal">
+    <div class="ai-modal-sheet">
+      <div class="ai-modal-header">
+        <div class="ai-modal-title">Choose an AI Platform</div>
+      </div>
+      <div class="ai-modal-subtitle">
+        Your scenario-based prompt is ready and <b>copied to the clipboard</b>. Select a tool, and <b>paste the prompt in chat</b> to get a report.
+      </div>
+      <div class="ai-modal-grid">
+        <button class="ai-platform-btn" data-platform="chatgpt">
+          <span class="icon">💬</span> ChatGPT
+        </button>
+        <button class="ai-platform-btn" data-platform="gemini">
+          <span class="icon">🌈</span> Google Gemini
+        </button>
+        <button class="ai-platform-btn" data-platform="perplexity">
+          <span class="icon">🔍</span> Perplexity
+        </button>
+        <button class="ai-platform-btn" data-platform="copilot">
+          <span class="icon">🪟</span> Microsoft Copilot
+        </button>
+      </div>
+      <div class="ai-modal-footer">
+        <button class="ai-modal-close" id="aiModalCloseBtn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="lab-footer">
+    <div class="lab-footer-inner">
+      <div class="footer-tagline">
+        MSI B2C Service Lab • Product Strategy Simulator
+      </div>
+      <div class="footer-meta">
+        <div class="footer-pill">Adopted from (a non-AI) student code</div>
+        <div class="footer-pill">Edited by Dr. Pravat Surya Kar, GIM</div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    /***********************
+     * PRODUCT CONFIG DATA *
+     ***********************/
+    const PRODUCT_CONFIG = {
+      "campa-cola": {
+        name: "🥤 Campa Cola",
+        fields: {
+          variant: {
+            label: "Product Variant",
+            options: ["Original Cola", "Orange Fizz", "Lemon Twist", "Zero Sugar", "Cherry Blast"],
+          },
+          positioning: {
+            label: "Market Positioning",
+            options: ["Mass Market Appeal", "Nostalgia Premium", "Youth Culture", "Health Conscious", "Value Champion"],
+          },
+          pricing: {
+            label: "Pricing Strategy",
+            options: ["Everyday Value (₹10)", "Promotional Pricing", "Premium Positioning", "Market Penetration"],
+          },
+          channel: {
+            label: "Distribution Channel",
+            options: ["Modern Trade", "General Trade", "Quick Commerce", "HORECA", "Omni-channel"],
+          },
+          audience: {
+            label: "Target Audience",
+            options: ["Gen Z (16–25)", "Millennials (26–40)", "Family Households", "Price Conscious Consumers"],
+          },
+        },
+      },
+      "nova-phone": {
+        name: "📱 Nova Phone",
+        fields: {
+          variant: {
+            label: "Phone Model",
+            options: ["Nova Lite", "Nova Pro", "Nova Max", "Nova Fold", "Nova Gaming"],
+          },
+          positioning: {
+            label: "Market Positioning",
+            options: ["Performance Leader", "Camera Excellence", "Design Premium", "Value Flagship", "Gaming Beast"],
+          },
+          pricing: {
+            label: "Pricing Strategy",
+            options: ["Penetration Pricing", "Competitive Parity", "Premium Pricing", "Value Pricing"],
+          },
+          channel: {
+            label: "Sales Channel",
+            options: ["Online Exclusive", "Retail Partners", "Company Stores", "Carrier Partners", "Omni-channel"],
+          },
+          audience: {
+            label: "Target Segment",
+            options: ["Tech Enthusiasts", "Professional Users", "Photography Lovers", "Budget Conscious", "Gamers"],
+          },
+        },
+      },
+      "glow-skin": {
+        name: "✨ Glow Skin",
+        fields: {
+          variant: {
+            label: "Product Line",
+            options: ["Anti-Aging Serum", "Vitamin C Range", "Hydrating Collection", "Acne Treatment", "Natural Organic"],
+          },
+          positioning: {
+            label: "Brand Positioning",
+            options: ["Dermatologist Recommended", "Natural & Organic", "Clinical Efficacy", "Luxury Beauty", "Affordable Care"],
+          },
+          pricing: {
+            label: "Pricing Model",
+            options: ["Premium Luxury", "Mid-tier Quality", "Accessible Pricing", "Subscription Model"],
+          },
+          channel: {
+            label: "Distribution",
+            options: ["Beauty E-commerce", "Pharmacy Chains", "Department Stores", "Direct-to-Consumer", "Multi-channel"],
+          },
+          audience: {
+            label: "Target Demographics",
+            options: ["Young Adults (18–25)", "Working Women (25–35)", "Mature Skin (35+)", "Men Grooming", "Sensitive Skin"],
+          },
+        },
+      },
+      "volt-bike": {
+        name: "⚡ Volt Bike",
+        fields: {
+          variant: {
+            label: "Bike Type",
+            options: ["City Commuter", "Mountain E-Bike", "Folding Bike", "Cargo Bike", "Performance Road"],
+          },
+          positioning: {
+            label: "Market Position",
+            options: ["Eco-Friendly Transport", "Urban Mobility", "Performance Cycling", "Lifestyle Product", "Cost Saver"],
+          },
+          pricing: {
+            label: "Pricing Approach",
+            options: ["Premium Innovation", "Competitive Pricing", "EMI/Financing", "Government Subsidy", "Leasing Model"],
+          },
+          channel: {
+            label: "Sales Strategy",
+            options: ["Direct Sales Centers", "Dealer Network", "Online Platform", "Corporate Sales", "Hybrid Approach"],
+          },
+          audience: {
+            label: "Customer Segment",
+            options: ["Daily Commuters", "Fitness Enthusiasts", "Eco-Conscious Buyers", "Delivery Professionals", "Recreation Users"],
+          },
+        },
+      },
+      "taste-bites": {
+        name: "🍕 Taste Bites",
+        fields: {
+          variant: {
+            label: "Service Type",
+            options: ["Quick Delivery", "Premium Dining", "Cloud Kitchen", "Healthy Options", "Regional Cuisine"],
+          },
+          positioning: {
+            label: "Market Position",
+            options: ["Speed & Convenience", "Quality & Taste", "Value for Money", "Health Conscious", "Local Favorite"],
+          },
+          pricing: {
+            label: "Pricing Strategy",
+            options: ["Competitive Pricing", "Premium Service", "Value Deals", "Subscription Model", "Dynamic Pricing"],
+          },
+          channel: {
+            label: "Platform Strategy",
+            options: ["Own App/Website", "Third-party Platforms", "Multi-platform", "Direct Ordering", "Omni-channel"],
+          },
+          audience: {
+            label: "Target Market",
+            options: ["Busy Professionals", "Students & Young Adults", "Families", "Health Conscious", "Food Enthusiasts"],
+          },
+        },
+      },
+      "swift-cab": {
+        name: "🚗 Swift Cab",
+        fields: {
+          variant: {
+            label: "Service Type",
+            options: ["Economy Rides", "Premium Service", "Shared Mobility", "Electric Fleet", "Corporate Solutions"],
+          },
+          positioning: {
+            label: "Market Position",
+            options: ["Affordable Transport", "Premium Experience", "Reliable Service", "Eco-Friendly", "Tech-Forward"],
+          },
+          pricing: {
+            label: "Pricing Model",
+            options: ["Competitive Rates", "Premium Pricing", "Dynamic Surge", "Subscription Plans", "Corporate Rates"],
+          },
+          channel: {
+            label: "Customer Acquisition",
+            options: ["Mobile App", "Digital Marketing", "Referral Programs", "Corporate Partnerships", "Multi-channel"],
+          },
+          audience: {
+            label: "User Segments",
+            options: ["Daily Commuters", "Business Travelers", "Occasional Users", "Price Sensitive", "Premium Users"],
+          },
+        },
+      },
+    };
+
+    /*******************
+     * DOM REFERENCES  *
+     *******************/
+    const productSelect = document.getElementById("product");
+    const dynamicFields = document.getElementById("dynamic-fields");
+    const runBtn = document.getElementById("runBtn");
+
+    const selectionSummary = document.getElementById("selection-summary");
+
+    const results = document.getElementById("results");
+    const loading = document.getElementById("loading");
+    const analysisResults = document.getElementById("analysis-results");
+    const metrics = document.getElementById("metrics");
+    const aiAnalysis = document.getElementById("ai-analysis");
+
+    // Report tab proxies
+    const reportPlaceholder = document.getElementById("report-placeholder");
+    const reportProxy = document.getElementById("report-proxy");
+    const metricsReport = document.getElementById("metrics-report");
+    const aiAnalysisReport = document.getElementById("ai-analysis-report");
+
+    // Tabs
+    const tabButtons = document.querySelectorAll(".tab-button");
+    const tabPanels = document.querySelectorAll(".tab-panel");
+
+    // Solution tab
+    const solutionPasswordInput = document.getElementById("solutionPassword");
+    const unlockSolutionBtn = document.getElementById("unlockSolutionBtn");
+    const solutionLocked = document.getElementById("solutionLocked");
+    const solutionContent = document.getElementById("solutionContent");
+    const SOLUTION_PASSWORD = "XYZ";
+
+    // AI modal
+    const aiModal = document.getElementById("aiModal");
+    const aiPlatformButtons = document.querySelectorAll(".ai-platform-btn");
+    const aiModalCloseBtn = document.getElementById("aiModalCloseBtn");
+
+    let currentSelections = {};
+
+    /***************
+     * TAB LOGIC   *
+     ***************/
+    tabButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const targetId = btn.getAttribute("data-tab-target");
+
+        tabButtons.forEach((b) => b.classList.remove("active"));
+        tabPanels.forEach((panel) => panel.classList.remove("active"));
+
+        btn.classList.add("active");
+        const targetPanel = document.getElementById(targetId);
+        if (targetPanel) targetPanel.classList.add("active");
+      });
+    });
+
+    /*************************
+     * PRODUCT SELECT LOGIC  *
+     *************************/
+    productSelect.addEventListener("change", function () {
+      const selectedProduct = this.value;
+      currentSelections = { product: selectedProduct };
+
+      if (!selectedProduct) {
+        dynamicFields.innerHTML =
+          '<div class="placeholder-text">Select a product category to unlock tailored strategy fields.</div>';
+        runBtn.disabled = true;
+        updateSelectionSummary();
+        return;
+      }
+
+      const config = PRODUCT_CONFIG[selectedProduct];
+      generateDynamicFields(config);
+      updateSelectionSummary();
+    });
+
+    function generateDynamicFields(config) {
+      dynamicFields.innerHTML = "";
+
+      Object.keys(config.fields).forEach((fieldKey) => {
+        const field = config.fields[fieldKey];
+
+        const formGroup = document.createElement("div");
+        formGroup.className = "form-group";
+
+        const label = document.createElement("label");
+        label.textContent = field.label + ":";
+
+        const select = document.createElement("select");
+        select.id = fieldKey;
+        select.innerHTML = '<option value="">— Select —</option>';
+
+        field.options.forEach((opt) => {
+          const optEl = document.createElement("option");
+          optEl.value = opt;
+          optEl.textContent = opt;
+          select.appendChild(optEl);
+        });
+
+        select.addEventListener("change", function () {
+          currentSelections[fieldKey] = this.value;
+          updateSelectionSummary();
+          checkFormComplete();
+        });
+
+        formGroup.appendChild(label);
+        formGroup.appendChild(select);
+        dynamicFields.appendChild(formGroup);
+      });
+    }
+
+    function updateSelectionSummary() {
+      if (!currentSelections.product) {
+        selectionSummary.innerHTML =
+          '<div class="placeholder-text" style="padding: 24px 6px;">Start by selecting a product on the left. Each choice updates this summary so you can track the scenario.</div>';
+      } else {
+        const config = PRODUCT_CONFIG[currentSelections.product];
+        let html = `<div style="margin-bottom:8px;"><span class="summary-label">Product:</span> <span class="pill">${config.name}</span></div>`;
+
+        Object.keys(config.fields).forEach((fieldKey) => {
+          const field = config.fields[fieldKey];
+          const value = currentSelections[fieldKey];
+
+          html += `<div class="summary-row"><span class="summary-label">${field.label}:</span> `;
+          if (value) {
+            html += `<span class="pill">${value}</span>`;
+          } else {
+            html += `<span class="summary-empty">Not selected</span>`;
+          }
+          html += `</div>`;
+        });
+
+        selectionSummary.innerHTML = html;
+      }
+    }
+
+    function checkFormComplete() {
+      if (!currentSelections.product) {
+        runBtn.disabled = true;
+        return;
+      }
+      const config = PRODUCT_CONFIG[currentSelections.product];
+      const requiredFields = Object.keys(config.fields);
+      const completed = requiredFields.filter((f) => currentSelections[f]);
+      runBtn.disabled = completed.length !== requiredFields.length;
+    }
+
+    /****************************************
+     * BUILD AI PROMPT FROM SNAPSHOT       *
+     ****************************************/
+    function buildAIPrompt(selections) {
+      const productLabel =
+        PRODUCT_CONFIG[selections.product]?.name || selections.product || "Not specified";
+
+      const variant = selections.variant || "Not specified";
+      const positioning = selections.positioning || "Not specified";
+      const pricing = selections.pricing || "Not specified";
+      const channel = selections.channel || "Not specified";
+      const audience = selections.audience || "Not specified";
+
+      return `
+Generate a 2-page long structured strategy report based on the following B2C scenario configuration.
+
+========================
+CURRENT SCENARIO SNAPSHOT
+========================
+Product Category: ${productLabel}
+Variant Chosen: ${variant}
+Market Positioning: ${positioning}
+Pricing Strategy: ${pricing}
+Distribution Channel: ${channel}
+Target Audience: ${audience}
+
+========================
+TASK
+========================
+Using the above scenario, prepare a comprehensive, classroom-ready analysis of an Indian B2C strategy.
+
+Your report MUST be approximately 2 pages and strictly follow this structure:
+
+PAGE 1 — STRATEGIC ANALYSIS
+1. Category Context (Indian market reality)
+2. Competitive Landscape (realistic India-based competitors and formats)
+3. Core STP Strategy (Segmentation, Targeting, Positioning)
+4. Prepare 7Ps Strategy (Product, Place, Promotion, People, Process, Physical evidence, Price) aligned to the chosen positioning
+
+PAGE 2 — QUANTITATIVE + ADVANCED INSIGHTS
+5. Estimated Market Share (%) — with short rationale
+6. Expected Revenue Growth (%) — with short rationale
+7. Customer Satisfaction Estimate (%) — with explanation
+8. 5 Key Recommendations (short, punchy, actionable bullet points), 
+9. Critical Success Factors (4 bullet points) — what must go right
+10. 2–3 likely risks and competitive responses and Risk Assessments (Low/Medium/High with explanation)
+11. Note possible counter-moves or risk Mitigation Plan (1-2 sentences)
+
+========================
+CONTEXT & TONE
+========================
+- Assume this is for a graduate-level Indian MBA marketing strategy class.
+- Use India-specific logic, examples, competitors, and consumer realities wherever appropriate.
+- Be precise, structured, analytical, and avoid generic clichés.
+- Do NOT return JSON. Return a clear, well-formatted 2-page narrative with headings and subheadings.
+`;
+    }
+
+    /**********************
+     * AI MODAL HELPERS   *
+     **********************/
+    function openAIModal() {
+      aiModal.classList.add("show");
+    }
+
+    function closeAIModal() {
+      aiModal.classList.remove("show");
+    }
+
+    /***********************
+     * RUN BUTTON HANDLER  *
+     ***********************/
+    runBtn.addEventListener("click", function () {
+      const promptText = buildAIPrompt(currentSelections);
+
+      // Show results panel and prompt
+      results.classList.add("show");
+      loading.style.display = "none";
+      analysisResults.style.display = "block";
+
+      aiAnalysis.innerHTML = `
+        <h4>📋 Exact Prompt to Paste into Any AI Platform</h4>
+        <p style="font-size:0.85rem; color:#6b7280; margin-bottom:6px;">
+          This prompt is auto-copied to your clipboard (if supported). <b>You may also copy it manually below</b>.
+        </p>
+        <pre style="font-size:0.8rem; white-space:pre-wrap; background:#f9fafb; padding:12px; border-radius:10px; border:1px solid #e5e7eb; max-height:320px; overflow:auto; margin:0;">
+${promptText.replace(/</g, "&lt;")}
+        </pre>
+      `;
+
+      // Copy prompt to clipboard (best-effort)
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(promptText).catch(() => {});
+      }
+
+      // Status metrics (prompt ready, platform pending)
+      metrics.innerHTML = `
+        <div class="metric-card">
+          <div class="metric-label">Status</div>
+          <div class="metric-value">Prompt Ready</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Next Step</div>
+          <div class="metric-value">Choose AI</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Report Length</div>
+          <div class="metric-value">~2 Pages</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Platform</div>
+          <div class="metric-value">Pending</div>
+        </div>
+      `;
+
+      // Mirror in Report tab
+      reportPlaceholder.style.display = "none";
+      reportProxy.style.display = "block";
+      metricsReport.innerHTML = metrics.innerHTML;
+      aiAnalysisReport.innerHTML = `
+        <p style="font-size:0.85rem; color:#6b7280; margin-bottom:6px;">
+          A 2-page AI report should be generated externally. View the full prompt inside the <strong>Lab Config</strong> tab.
+        </p>
+      `;
+
+      // Scroll to results area
+      results.scrollIntoView({ behavior: "smooth", block: "start" });
+
+      // Open AI selection bottom-sheet
+      openAIModal();
+    });
+
+    /***********************
+     * AI MODAL INTERACTIONS
+     ***********************/
+    aiPlatformButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const platform = btn.getAttribute("data-platform");
+        let url = "";
+        let platformLabel = "";
+
+        switch (platform) {
+          case "chatgpt":
+            url = "https://chat.openai.com/";
+            platformLabel = "ChatGPT";
+            break;
+          case "gemini":
+            url = "https://gemini.google.com/";
+            platformLabel = "Google Gemini";
+            break;
+          case "perplexity":
+            url = "https://www.perplexity.ai/";
+            platformLabel = "Perplexity";
+            break;
+          case "copilot":
+            url = "https://copilot.microsoft.com/";
+            platformLabel = "Microsoft Copilot";
+            break;
+          default:
+            return;
+        }
+
+        // Update metrics with platform chosen
+        metrics.innerHTML = `
+          <div class="metric-card">
+            <div class="metric-label">Status</div>
+            <div class="metric-value">Ready</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Platform</div>
+            <div class="metric-value">${platformLabel}</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Action</div>
+            <div class="metric-value">Paste Prompt</div>
+          </div>		  
+          <div class="metric-card">
+            <div class="metric-label">AI Draft Report</div>
+            <div class="metric-value">Review & Adapt</div>
+          </div>
+
+        `;
+        metricsReport.innerHTML = metrics.innerHTML;
+
+        // Open platform in new tab
+        window.open(url, "_blank");
+
+        // Close modal
+        closeAIModal();
+      });
+    });
+
+    aiModalCloseBtn.addEventListener("click", () => {
+      closeAIModal();
+    });
+
+    // Close modal on overlay click (outside sheet)
+    aiModal.addEventListener("click", (e) => {
+      if (e.target === aiModal) {
+        closeAIModal();
+      }
+    });
+
+    /***********************
+     * SOLUTION UNLOCK     *
+     ***********************/
+    unlockSolutionBtn.addEventListener("click", () => {
+      const entered = (solutionPasswordInput.value || "").trim();
+      if (entered === SOLUTION_PASSWORD) {
+        solutionLocked.style.display = "none";
+        solutionContent.style.display = "block";
+      } else {
+        alert("Incorrect password!");
+      }
+    });
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
